@@ -1,0 +1,68 @@
+1. --rm
+
+2. 0.42.0
+
+URL="https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2019-09.csv.gz"
+
+docker run -it \
+  --network=hw1_default \
+  taxi_ingest:v001 \
+    --user=root \
+    --password=root \
+    --host=pgdatabase \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=green_tripdata \
+    --url=${URL}
+
+URL2="https://s3.amazonaws.com/nyc-tlc/misc/taxi+_zone_lookup.csv"
+
+docker run -it \
+  --network=hw1_default \
+  taxi_ingest:v002 \
+    --user=root \
+    --password=root \
+    --host=pgdatabase \
+    --port=5432 \
+    --db=ny_taxi \
+    --table_name=zones \
+    --url=${URL2}
+
+3. 15612
+
+SELECT COUNT(1) FROM public.green_tripdata
+WHERE lpep_pickup_datetime::date = '2019-09-18'
+AND lpep_dropoff_datetime::date = '2019-09-18'
+
+4. "2019-09-26"
+
+SELECT lpep_pickup_datetime::date as the_date, MAX(trip_distance) as max_dist
+FROM green_tripdata
+GROUP BY the_date
+ORDER BY max_dist DESC
+
+5. "Brooklyn" "Manhattan" "Queens"
+
+SELECT z."Borough", SUM(GT.total_amount) as sum_total
+FROM green_tripdata gt
+LEFT JOIN zones z
+ON gt."PULocationID" = z."LocationID"
+WHERE gt.lpep_pickup_datetime::date = '2019-09-18'
+GROUP BY z."Borough"
+ORDER BY sum_total DESC
+
+6. JFK Airport
+
+SELECT z."Zone", MAX(gt.tip_amount) as max_tip
+FROM green_tripdata gt
+LEFT JOIN zones z
+ON gt."DOLocationID" = z."LocationID"
+WHERE gt.lpep_pickup_datetime::date >= '2019-09-01'
+AND gt.lpep_pickup_datetime::date <= '2019-09-30'
+AND gt."PULocationID" = 7
+GROUP BY z."Zone"
+ORDER BY max_tip DESC
+
+
+
+
